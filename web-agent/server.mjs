@@ -58,7 +58,8 @@ function runBridge(action, data = {}) {
       action,
       space: state.spaceName,
       category: text(data.category || state.job.category, 100),
-      count: String(state.job.requestedCount || 10)
+      count: String(state.job.requestedCount || 10),
+      productId: text(data.productId || "", 40)
     });
     const importCode = "await import('" + pathToFileURL(script).href + "?" + query.toString() + "')";
     const child = spawn("ego-browser.exe", ["nodejs", "-e", importCode], {
@@ -168,10 +169,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/action") {
       const input = await bodyJson(req);
       const action = text(input.action, 40);
-      if (!["openCompass", "readCurrent", "open1688"].includes(action)) {
+      if (!["openCompass", "readCurrent", "open1688", "search1688"].includes(action)) {
         json(res, 400, { error: "未知操作" });
         return;
       }
+      let productId = "";
       if (action === "openCompass") {
         state.job = {
           status: "working",
@@ -182,9 +184,31 @@ const server = http.createServer(async (req, res) => {
         };
         await persist();
       }
+      if (action === "search1688") {
+        const record = state.records.find(item => item.id === text(input.recordId, 80));
+        if (!record) {
+          json(res, 404, { error: "找不到这条商品记录" });
+          return;
+        }
+        try {
+          const productUrl = new URL(record.douyinLink);
+          if (productUrl.hostname !== "haohuo.jinritemai.com") throw new Error("商品链接不是抖音商品页");
+          productId = productUrl.searchParams.get("id") || "";
+        } catch (error) {
+          json(res, 400, { error: error.message || "抖音商品链接无效" });
+          return;
+        }
+        if (!productId) {
+          json(res, 400, { error: "商品链接中没有商品编号" });
+          return;
+        }
+        state.job.status = "working";
+        state.job.message = "正在提取商品图并提交到 1688 以图搜款…";
+        await persist();
+      }
 
       try {
-        const result = await runBridge(action, { category: input.category });
+        const result = await runBridge(action, { category: input.category, productId });
         state.job.status = "ready";
         state.job.message = result.message || (action === "readCurrent" ? "已读取当前页面" : "操作完成");
         state.job.currentUrl = result.url || state.job.currentUrl || null;
