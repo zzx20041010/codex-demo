@@ -57,7 +57,8 @@ function runBridge(action, data = {}) {
     const query = new URLSearchParams({
       action,
       space: state.spaceName,
-      category: text(data.category || state.job.category, 100)
+      category: text(data.category || state.job.category, 100),
+      count: String(state.job.requestedCount || 10)
     });
     const importCode = "await import('" + pathToFileURL(script).href + "?" + query.toString() + "')";
     const child = spawn("ego-browser.exe", ["nodejs", "-e", importCode], {
@@ -280,3 +281,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log("罗盘选品工作台：http://127.0.0.1:" + PORT);
 });
+
