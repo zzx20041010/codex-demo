@@ -1,0 +1,11 @@
+{
+  "name": "douyin-1688-local-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
