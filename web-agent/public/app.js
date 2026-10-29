@@ -71,6 +71,12 @@ function renderRecords(records) {
 
     const sourceCell = document.createElement("td");
     sourceCell.append(linkNode(item.alibabaLink, item.alibabaLink ? "1688 详情 ↗" : "未匹配"));
+    const searchImage = document.createElement("button");
+    searchImage.type = "button";
+    searchImage.className = "row-search";
+    searchImage.textContent = "以图搜1688";
+    searchImage.addEventListener("click", () => perform("search1688", searchImage, { recordId: item.id }));
+    sourceCell.append(searchImage);
     if (item.supplier) {
       const supplier = document.createElement("div");
       supplier.textContent = item.supplier;
@@ -146,17 +152,18 @@ async function refresh() {
   updateJob(data.job || {});
 }
 
-async function perform(action, sourceButton) {
+async function perform(action, sourceButton, extra = {}) {
   sourceButton.disabled = true;
   const previous = sourceButton.innerHTML;
-  sourceButton.textContent = action === "readCurrent" ? "读取中…" : "连接中…";
+  sourceButton.textContent = action === "readCurrent" ? "读取中…" : action === "search1688" ? "搜图中…" : "连接中…";
   try {
     const data = await request("/api/action", {
       method: "POST",
       body: JSON.stringify({
         action,
         count: byId("count").value,
-        category: byId("category").value
+        category: byId("category").value,
+        ...extra
       })
     });
     state = data.state || state;
@@ -194,3 +201,4 @@ byId("record-form").addEventListener("submit", async event => {
 });
 
 refresh().catch(error => notify("工作台读取失败：" + error.message));
+
