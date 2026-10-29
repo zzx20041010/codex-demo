@@ -62,7 +62,14 @@ if (action === "openCompass") {
 } else if (action === "open1688") {
   let page = findPage("p2");
   if (!page) page = await task.newPage();
-  await page.goto("https://air.1688.com/kapp/1688-search/pc-image-search/");
+  const imageSearchUrl = "https://air.1688.com/kapp/1688-search/pc-image-search/";
+  if (!(await page.url()).startsWith(imageSearchUrl)) {
+    try {
+      await page.goto(imageSearchUrl);
+    } catch (error) {
+      if (!String(error?.message || error).includes("navigation committed")) throw error;
+    }
+  }
   emit({
     action,
     url: await page.url(),
