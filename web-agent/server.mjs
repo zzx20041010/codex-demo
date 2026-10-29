@@ -184,7 +184,7 @@ const server = http.createServer(async (req, res) => {
 
       try {
         const result = await runBridge(action, { category: input.category });
-        state.job.status = action === "openCompass" ? "ready" : state.job.status;
+        state.job.status = "ready";
         state.job.message = result.message || (action === "readCurrent" ? "已读取当前页面" : "操作完成");
         state.job.currentUrl = result.url || state.job.currentUrl || null;
         state.job.pageTitle = result.title || state.job.pageTitle || null;
