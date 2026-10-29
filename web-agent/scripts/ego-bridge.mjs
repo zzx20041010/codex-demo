@@ -18,12 +18,19 @@ function emit(value) {
 if (action === "openCompass") {
   let page = findPage("p1");
   if (!page) page = await task.newPage();
-  await page.goto(compassUrl);
+  const currentBefore = await page.url();
+  if (!currentBefore.startsWith("https://compass.jinritemai.com/shop/chance/merchandise-product-rank")) {
+    try {
+      await page.goto(compassUrl);
+    } catch (error) {
+      if (!String(error?.message || error).includes("navigation committed")) throw error;
+    }
+  }
   emit({
     action,
     url: await page.url(),
     title: await page.title(),
-    message: "已在 Ego 浏览器打开电商罗盘商品卡榜单。请在页面确认日期、品牌和价格筛选。"
+    message: "罗盘页面已打开。请在页面确认日期、品牌和价格筛选。"
   });
 } else if (action === "readCurrent") {
   const page = findPage("p1");
