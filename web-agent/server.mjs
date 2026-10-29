@@ -78,9 +78,9 @@ function runBridge(action, data = {}) {
     });
     child.on("close", code => {
       clearTimeout(timer);
-      const lines = stdout.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const lines = (stdout + "\n" + stderr).split(/\r?\n/).map(line => line.trim()).filter(Boolean);
       const jsonLine = [...lines].reverse().find(line => line.startsWith("{"));
-      if (code !== 0 || !jsonLine) {
+      if (!jsonLine) {
         reject(new Error((stderr || stdout || "Ego 浏览器没有返回结果").trim().slice(-1200)));
         return;
       }
