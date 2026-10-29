@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>罗盘选品工作台</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="罗盘选品工作台首页">
+      <span class="brand-mark">选</span>
+      <span class="brand-name">罗盘选品</span>
+    </a>
+    <div class="top-meta">
+      <span class="local-badge"><i></i> 本机模式</span>
+      <span class="divider"></span>
+      <span class="quiet">浏览器账号与采集文件留在本机</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <div>
+        <p class="eyebrow">DOUYIN × 1688</p>
+        <h1>选品与货源，放在一张工作台上。</h1>
+        <p class="intro-copy">从商品卡榜单读取真实商品链接，逐款核对 1688 规格和采购条件。</p>
+      </div>
+      <div class="session-chip">
+        <span class="pulse"></span>
+        <span id="session-status">等待连接 Ego 浏览器</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="control-panel panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">任务设置</p>
+            <h2>采集条件</h2>
+          </div>
+          <span class="small-icon">01</span>
+        </div>
+
+        <label class="field-label" for="count">本轮目标商品</label>
+        <div class="count-row">
+          <input id="count" type="number" min="1" max="30" value="10">
+          <span class="unit-label">款</span>
+          <span class="helper">最多 30 款</span>
+        </div>
+
+        <label class="field-label" for="category">类目策略</label>
+        <select id="category">
+          <option value="随机类目">随机类目（页面内手动切换）</option>
+          <option value="当前类目">使用当前榜单类目</option>
+        </select>
+
+        <div class="filter-block">
+          <span class="field-label">罗盘筛选条件</span>
+          <div class="filter-line"><span class="check">✓</span><span>品牌</span><strong>非知名品牌</strong></div>
+          <div class="filter-line"><span class="check">✓</span><span>价格</span><strong>¥0 – ¥15</strong></div>
+        </div>
+
+        <button id="open-compass" class="button button-primary">
+          <span>打开电商罗盘</span><span aria-hidden="true">↗</span>
+        </button>
+        <button id="read-current" class="button button-secondary">
+          <span>读取当前页商品链接</span><span aria-hidden="true">↓</span>
+        </button>
+        <button id="open-1688" class="button button-quiet">打开 1688 以图搜款</button>
+
+        <div class="notice">
+          <span class="notice-mark">i</span>
+          <p>开始后请在 Ego 浏览器里确认榜单日期、品牌和价格筛选，再读取当前页。成本和规格需以 1688 商品详情为准。</p>
+        </div>
+      </aside>
+
+      <section class="main-column">
+        <div class="progress-panel panel">
+          <div class="panel-head progress-head">
+            <div>
+              <p class="eyebrow">当前任务</p>
+              <h2 id="job-title">尚未启动</h2>
+            </div>
+            <span id="job-badge" class="job-badge">待开始</span>
+          </div>
+          <div class="steps">
+            <div class="step active"><span class="step-dot">1</span><span>罗盘榜单</span></div>
+            <span class="step-rule"></span>
+            <div class="step"><span class="step-dot">2</span><span>商品链接</span></div>
+            <span class="step-rule"></span>
+            <div class="step"><span class="step-dot">3</span><span>1688 核价</span></div>
+          </div>
+          <p id="job-message" class="job-message">打开罗盘后，在已登录页面设置榜单条件。</p>
+          <div class="current-page">
+            <span class="page-indicator"></span>
+            <span id="current-page">尚未连接商品页面</span>
+          </div>
+        </div>
+
+        <div class="results-panel panel">
+          <div class="panel-head results-head">
+            <div>
+              <p class="eyebrow">本机结果表</p>
+              <h2>商品与货源</h2>
+            </div>
+            <div class="results-actions">
+              <span id="result-count" class="count-badge">0 条</span>
+              <a class="button button-export" href="/api/export.csv">导出 CSV <span aria-hidden="true">↓</span></a>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th>
+                  <th>抖音链接</th>
+                  <th>1688 货源</th>
+                  <th>规格 / 成本</th>
+                  <th>核对状态</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="records-body">
+                <tr class="empty-row"><td colspan="6">读取商品后会显示在这里</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <details class="manual-entry">
+            <summary><span class="plus">＋</span> 手动补充一条商品或货源</summary>
+            <form id="record-form">
+              <div class="form-grid">
+                <label>商品名称<input name="productName" maxlength="300" placeholder="商品标题"></label>
+                <label>类目<input name="category" maxlength="100" placeholder="例如：厨房用品"></label>
+                <label class="wide">抖音商品链接<input name="douyinLink" type="url" placeholder="https://..."></label>
+                <label class="wide">1688 商品链接<input name="alibabaLink" type="url" placeholder="https://..."></label>
+                <label>对应规格<input name="spec" placeholder="按匹配规格填写"></label>
+                <label>采购单价<input name="unitPrice" inputmode="decimal" placeholder="元"></label>
+                <label>计价单位<input name="unit" placeholder="件 / 套 / 组"></label>
+                <label>起批量<input name="minimumOrder" placeholder="如 2 件"></label>
+                <label>运费<input name="shippingFee" inputmode="decimal" placeholder="元；未知留空"></label>
+                <label>运费目的地<input name="shippingDestination" placeholder="城市"></label>
+                <label>供应商<input name="supplier" placeholder="供应商名称"></label>
+                <label>匹配状态
+                  <select name="matchStatus">
+                    <option>待核实</option>
+                    <option>外观与规格匹配</option>
+                    <option>疑似同款，待核实</option>
+                    <option>未找到</option>
+                  </select>
+                </label>
+                <label class="wide">备注<input name="notes" maxlength="500" placeholder="价格条件、装数差异等"></label>
+              </div>
+              <div class="form-footer">
+                <span id="form-message" class="form-message"></span>
+                <button class="button button-primary" type="submit">保存记录</button>
+              </div>
+            </form>
+          </details>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer">
+      <span>只做查询和本地记录，不下单、不联系供应商。</span>
+      <span>数据目录：D:\Codex\work\douyin-1688-web-agent\data</span>
+    </footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
