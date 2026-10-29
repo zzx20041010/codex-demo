@@ -30,7 +30,7 @@ if (action === "openCompass") {
     action,
     url: await page.url(),
     title: await page.title(),
-    message: "罗盘页面已打开。请在页面确认日期、品牌和价格筛选。"
+    message: "罗盘页面已打开。请先在 Ego 浏览器完成日期、非知名品牌和 ¥0–¥15 筛选，再回到本工作台点击“读取当前页商品链接”。"
   });
 } else if (action === "readCurrent") {
   const page = findPage("p1");
