@@ -2,7 +2,9 @@ const params = new URL(import.meta.url).searchParams;
 const action = params.get("action");
 const spaceName = params.get("space") || "douyin-1688-web-agent";
 const count = Math.max(1, Math.min(30, Number(params.get("count")) || 10));
+const productId = params.get("productId") || "";
 const compassUrl = "https://compass.jinritemai.com/shop/chance/merchandise-product-rank?rank_type=3";
+const imageSearchUrl = "https://air.1688.com/kapp/1688-search/pc-image-search/";
 
 const task = await taskSpace(spaceName);
 const pages = await task.pages();
@@ -99,7 +101,6 @@ if (action === "openCompass") {
 } else if (action === "open1688") {
   let page = findPage("p2");
   if (!page) page = await task.newPage();
-  const imageSearchUrl = "https://air.1688.com/kapp/1688-search/pc-image-search/";
   if (!(await page.url()).startsWith(imageSearchUrl)) {
     try {
       await page.goto(imageSearchUrl);
@@ -113,6 +114,66 @@ if (action === "openCompass") {
     title: await page.title(),
     message: "已在同一 Ego 任务中新开 1688 页面。商品图搜款和规格核对仍需在页面内确认。"
   });
+} else if (action === "search1688") {
+  if (!productId) throw new Error("商品编号缺失，无法提取商品图");
+  let searchPage = null;
+  for (const managed of pages) {
+    const candidate = task.page(managed.label);
+    if ((await candidate.url()).startsWith(imageSearchUrl)) {
+      searchPage = candidate;
+      break;
+    }
+  }
+  if (!searchPage) {
+    searchPage = await task.newPage();
+    try {
+      await searchPage.goto(imageSearchUrl);
+    } catch (error) {
+      if (!String(error?.message || error).includes("navigation committed")) throw error;
+    }
+  }
+
+  const detailPage = await task.newPage();
+  const detailUrl = "https://compass.jinritemai.com/shop/chance/rank-product/detail?product_id=" + encodeURIComponent(productId);
+  try {
+    await detailPage.goto(detailUrl);
+  } catch (error) {
+    if (!String(error?.message || error).includes("navigation committed")) throw error;
+  }
+  let imageUrl = "";
+  for (let attempt = 0; attempt < 20 && !imageUrl; attempt++) {
+    imageUrl = await detailPage.evaluate(() => Array.from(document.images)
+      .find(image => image.naturalWidth >= 1000 && image.src.includes("ecombdimg"))?.src || "");
+    if (!imageUrl) await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  if (!imageUrl) {
+    await detailPage.close();
+    throw new Error("罗盘商品详情中没有找到高清商品图");
+  }
+
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) throw new Error("商品图下载失败：" + response.status);
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+    const imagePath = path.join(root, "data", "douyin-" + productId + ".jpg");
+    await fs.mkdir(path.dirname(imagePath), { recursive: true });
+    await fs.writeFile(imagePath, new Uint8Array(await response.arrayBuffer()));
+    await searchPage.setInputFiles("#img-search-upload", [imagePath]);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await searchPage.click(".search-btn", { label: "Search 1688 by image" });
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    emit({
+      action,
+      url: await searchPage.url(),
+      title: await searchPage.title(),
+      message: "已上传这款商品图并提交 1688 搜图。请核对结果中的规格、单价、起批量和运费。"
+    });
+  } finally {
+    await detailPage.close();
+  }
 } else {
   throw new Error("未知的 Ego 浏览器操作");
 }
